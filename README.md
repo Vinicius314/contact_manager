@@ -24,6 +24,9 @@ contact_manager/
 1. Instale a biblioteca auxiliar:
 ```bash
 pip install tkcalendar
+```
 
 2. Execute:
+```bash
 python main.py
+```
