@@ -11,13 +11,14 @@ Aplicação gráfica para cadastro e gerenciamento de contatos pessoais ou profi
 
 ## 📂 Estrutura
 
+```
 contact_manager/
   ├── main.py
   ├── gui.py
   ├── storage.py
   ├── contatos.json
   └── README.md
-
+```
 
 ## ▶️ Como usar
 
