@@ -1,133 +1,140 @@
-import customtkinter as ctk
-from tkinter import messagebox
-from storage import carregar_tarefas, salvar_tarefas
+import tkinter as tk
+from tkinter import ttk, messagebox
+from tkcalendar import DateEntry
+from storage import carregar_contatos, salvar_contatos
 
-class ToDoApp:
+class ContactApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("To-do List")
-        self.root.geometry("600x500")
-        self.tarefas = carregar_tarefas()
-        self.filtro = "todas"
+        self.root.title("Gerenciador de Contatos")
+        self.root.geometry("750x500")
+        self.contatos = carregar_contatos()
 
-        self.entrada = ctk.CTkEntry(root, width=400, height=35, placeholder_text="Digite uma nova tarefa")
-        self.entrada.pack(pady=(15, 10))
+        # Frame superior (formulário)
+        form_frame = ttk.LabelFrame(root, text="Novo Contato")
+        form_frame.pack(fill="x", padx=10, pady=10)
 
-        self.frame_botoes = ctk.CTkFrame(root)
-        self.frame_botoes.pack()
+        ttk.Label(form_frame, text="Nome:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.nome_entry = ttk.Entry(form_frame)
+        self.nome_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        self.btn_add = ctk.CTkButton(self.frame_botoes, text="Adicionar", command=self.adicionar_tarefa)
-        self.btn_add.pack(side="left", padx=5)
+        ttk.Label(form_frame, text="Email:").grid(row=0, column=2, padx=5, pady=5, sticky="w")
+        self.email_entry = ttk.Entry(form_frame)
+        self.email_entry.grid(row=0, column=3, padx=5, pady=5)
 
-        self.btn_remover = ctk.CTkButton(self.frame_botoes, text="Remover", command=self.remover_tarefa)
-        self.btn_remover.pack(side="left", padx=5)
+        ttk.Label(form_frame, text="Telefone:").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.tel_entry = ttk.Entry(form_frame)
+        self.tel_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        self.btn_subir = ctk.CTkButton(self.frame_botoes, text="🔼", width=40, command=self.mover_para_cima)
-        self.btn_subir.pack(side="left", padx=2)
+        ttk.Label(form_frame, text="Data Nasc:").grid(row=1, column=2, padx=5, pady=5, sticky="w")
+        self.data_entry = DateEntry(form_frame, date_pattern="dd/mm/yyyy")
+        self.data_entry.grid(row=1, column=3, padx=5, pady=5)
 
-        self.btn_descer = ctk.CTkButton(self.frame_botoes, text="🔽", width=40, command=self.mover_para_baixo)
-        self.btn_descer.pack(side="left", padx=2)
+        ttk.Label(form_frame, text="Tipo:").grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.tipo_cb = ttk.Combobox(form_frame, values=["Pessoal", "Profissional"], state="readonly")
+        self.tipo_cb.grid(row=2, column=1, padx=5, pady=5)
+        self.tipo_cb.current(0)
 
-        self.btn_limpar = ctk.CTkButton(self.frame_botoes, text="Limpar Tudo", fg_color="red", command=self.limpar_tudo)
-        self.btn_limpar.pack(side="left", padx=5)
+        self.btn_add = ttk.Button(form_frame, text="Adicionar", command=self.adicionar_contato)
+        self.btn_add.grid(row=2, column=3, padx=5, pady=5)
 
-        self.btn_modo = ctk.CTkButton(root, text="🌗 Alternar Tema", command=self.trocar_tema)
-        self.btn_modo.pack(pady=5)
+        # Treeview (lista de contatos)
+        self.tree = ttk.Treeview(root, columns=("Nome", "Email", "Telefone", "Data", "Tipo"), show="headings")
+        self.tree.heading("Nome", text="Nome")
+        self.tree.heading("Email", text="Email")
+        self.tree.heading("Telefone", text="Telefone")
+        self.tree.heading("Data", text="Data Nasc.")
+        self.tree.heading("Tipo", text="Tipo")
 
-        self.filtro_frame = ctk.CTkFrame(root)
-        self.filtro_frame.pack()
+        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-        self.btn_todas = ctk.CTkButton(self.filtro_frame, text="Todas", command=lambda: self.definir_filtro("todas"))
-        self.btn_todas.pack(side="left", padx=5)
+        self.tree.bind("<Double-1>", self.editar_contato)
 
-        self.btn_pendentes = ctk.CTkButton(self.filtro_frame, text="Pendentes", command=lambda: self.definir_filtro("pendentes"))
-        self.btn_pendentes.pack(side="left", padx=5)
-
-        self.btn_concluidas = ctk.CTkButton(self.filtro_frame, text="Concluídas", command=lambda: self.definir_filtro("concluidas"))
-        self.btn_concluidas.pack(side="left", padx=5)
-
-        self.lista = ctk.CTkListbox(root, height=15, width=550, command=self.toggle_conclusao)
-        self.lista.pack(pady=10)
+        # Botão excluir
+        self.btn_excluir = ttk.Button(root, text="Excluir Selecionado", command=self.excluir_contato)
+        self.btn_excluir.pack(pady=5)
 
         self.carregar_lista()
+
+    def adicionar_contato(self):
+        nome = self.nome_entry.get().strip()
+        email = self.email_entry.get().strip()
+        tel = self.tel_entry.get().strip()
+        data = self.data_entry.get()
+        tipo = self.tipo_cb.get()
+
+        if not nome or not email:
+            messagebox.showwarning("Aviso", "Nome e Email são obrigatórios.")
+            return
+
+        contato = {
+            "nome": nome,
+            "email": email,
+            "telefone": tel,
+            "data_nasc": data,
+            "tipo": tipo
+        }
+
+        self.contatos.append(contato)
+        salvar_contatos(self.contatos)
+        self.carregar_lista()
+        self.limpar_campos()
 
     def carregar_lista(self):
-        self.lista.delete(0, "end")
-        for i, t in enumerate(self.tarefas):
-            if self.filtro == "pendentes" and t["concluida"]:
-                continue
-            if self.filtro == "concluidas" and not t["concluida"]:
-                continue
-            prefixo = "✓ " if t["concluida"] else "• "
-            self.lista.insert("end", prefixo + t["texto"])
+        self.tree.delete(*self.tree.get_children())
+        for contato in self.contatos:
+            self.tree.insert("", "end", values=(
+                contato["nome"], contato["email"], contato["telefone"], contato["data_nasc"], contato["tipo"]
+            ))
 
-    def adicionar_tarefa(self):
-        texto = self.entrada.get().strip()
-        if texto:
-            self.tarefas.append({"texto": texto, "concluida": False})
-            salvar_tarefas(self.tarefas)
-            self.carregar_lista()
-            self.entrada.delete(0, "end")
+    def limpar_campos(self):
+        self.nome_entry.delete(0, tk.END)
+        self.email_entry.delete(0, tk.END)
+        self.tel_entry.delete(0, tk.END)
+        self.data_entry.set_date("")
+        self.tipo_cb.current(0)
 
-    def remover_tarefa(self):
-        idx = self.lista.curselection()
-        if idx:
-            real_idx = self.get_indice_real(idx[0])
-            self.tarefas.pop(real_idx)
-            salvar_tarefas(self.tarefas)
-            self.carregar_lista()
-
-    def toggle_conclusao(self, idx=None):
-        idx = self.lista.curselection()
-        if not idx:
+    def excluir_contato(self):
+        selecionado = self.tree.selection()
+        if not selecionado:
+            messagebox.showinfo("Info", "Selecione um contato para excluir.")
             return
-        real_idx = self.get_indice_real(idx[0])
-        self.tarefas[real_idx]["concluida"] = not self.tarefas[real_idx]["concluida"]
-        salvar_tarefas(self.tarefas)
-        self.carregar_lista()
-
-    def limpar_tudo(self):
-        if messagebox.askyesno("Confirmar", "Deseja remover todas as tarefas?"):
-            self.tarefas.clear()
-            salvar_tarefas(self.tarefas)
+        idx = self.tree.index(selecionado)
+        if messagebox.askyesno("Confirmar", "Deseja excluir este contato?"):
+            self.contatos.pop(idx)
+            salvar_contatos(self.contatos)
             self.carregar_lista()
 
-    def mover_para_cima(self):
-        idx = self.lista.curselection()
-        if idx and idx[0] > 0:
-            real_idx = self.get_indice_real(idx[0])
-            if real_idx > 0:
-                self.tarefas[real_idx - 1], self.tarefas[real_idx] = self.tarefas[real_idx], self.tarefas[real_idx - 1]
-                salvar_tarefas(self.tarefas)
-                self.carregar_lista()
-                self.lista.select_set(idx[0] - 1)
+    def editar_contato(self, event):
+        selecionado = self.tree.selection()
+        if not selecionado:
+            return
+        idx = self.tree.index(selecionado)
+        contato = self.contatos[idx]
 
-    def mover_para_baixo(self):
-        idx = self.lista.curselection()
-        if idx and idx[0] < len(self.lista.get(0, "end")) - 1:
-            real_idx = self.get_indice_real(idx[0])
-            if real_idx < len(self.tarefas) - 1:
-                self.tarefas[real_idx + 1], self.tarefas[real_idx] = self.tarefas[real_idx], self.tarefas[real_idx + 1]
-                salvar_tarefas(self.tarefas)
-                self.carregar_lista()
-                self.lista.select_set(idx[0] + 1)
+        self.nome_entry.delete(0, tk.END)
+        self.nome_entry.insert(0, contato["nome"])
 
-    def trocar_tema(self):
-        atual = ctk.get_appearance_mode()
-        novo = "light" if atual == "Dark" else "dark"
-        ctk.set_appearance_mode(novo)
+        self.email_entry.delete(0, tk.END)
+        self.email_entry.insert(0, contato["email"])
 
-    def definir_filtro(self, tipo):
-        self.filtro = tipo
+        self.tel_entry.delete(0, tk.END)
+        self.tel_entry.insert(0, contato["telefone"])
+
+        self.data_entry.set_date(contato["data_nasc"])
+        self.tipo_cb.set(contato["tipo"])
+
+        self.btn_add.config(text="Salvar", command=lambda: self.salvar_edicao(idx))
+
+    def salvar_edicao(self, idx):
+        self.contatos[idx] = {
+            "nome": self.nome_entry.get(),
+            "email": self.email_entry.get(),
+            "telefone": self.tel_entry.get(),
+            "data_nasc": self.data_entry.get(),
+            "tipo": self.tipo_cb.get()
+        }
+        salvar_contatos(self.contatos)
         self.carregar_lista()
-
-    def get_indice_real(self, visivel_idx):
-        """Mapeia índice visível para o real na lista original"""
-        visiveis = []
-        for i, t in enumerate(self.tarefas):
-            if self.filtro == "pendentes" and t["concluida"]:
-                continue
-            if self.filtro == "concluidas" and not t["concluida"]:
-                continue
-            visiveis.append(i)
-        return visiveis[visivel_idx] if visivel_idx < len(visiveis) else 0
+        self.limpar_campos()
+        self.btn_add.config(text="Adicionar", command=self.adicionar_contato)
