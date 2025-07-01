@@ -1,6 +1,3 @@
-## 📘 `contact_manager/README.md`
-
-```markdown
 # 📇 Gerenciador de Contatos – GUI com Tkinter + TTK
 
 Aplicação gráfica para cadastro e gerenciamento de contatos pessoais ou profissionais, com widgets modernos usando `ttk`.
