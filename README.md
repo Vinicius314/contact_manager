@@ -1,6 +1,3 @@
-
----
-
 ## 📘 `contact_manager/README.md`
 
 ```markdown
